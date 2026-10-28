@@ -4,3 +4,4 @@ dist
 .dev.vars
 .impeccable/review
 .astro
+package-lock.json
