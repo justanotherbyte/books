@@ -41,7 +41,8 @@ export async function isSignedIn(cookie: string | undefined) {
 	if (!cookie) return false;
 
 	const [expires, signature] = cookie.split('.');
-	if (!signature || Number(expires) < Date.now()) return false;
+	// A malformed signature (e.g. one hex char) decodes to zero bytes and makes crypto.subtle.verify throw, so reject it up front.
+	if (!/^[0-9a-f]{64}$/.test(signature ?? '') || !(Number(expires) >= Date.now())) return false;
 
 	return crypto.subtle.verify('HMAC', await hmacKey(), fromHex(signature), encoder.encode(expires));
 }
