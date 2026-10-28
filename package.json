@@ -6,9 +6,9 @@
     "dev": "astro dev",
     "build": "astro sync && tsc && astro build",
     "preview": "npm run build && astro preview",
-    "deploy": "npm run build && wrangler deploy",
-    "db:migrate:local": "wrangler d1 migrations apply books --local",
-    "db:migrate:remote": "wrangler d1 migrations apply books --remote",
+    "deploy": "npm run build && npm run db:migrate:remote && wrangler deploy",
+    "db:migrate:local": "wrangler d1 migrations apply DB --local",
+    "db:migrate:remote": "wrangler d1 migrations apply DB --remote",
     "types": "wrangler types",
     "smoke": "sh scripts/smoke.sh"
   },
@@ -29,5 +29,12 @@
     "tailwindcss": "^4.3.3",
     "typescript": "^7.0.2",
     "wrangler": "^4.154.0"
+  },
+  "cloudflare": {
+    "bindings": {
+      "APP_PASSWORD": {
+        "description": "The one password that unlocks the library. Changing it signs out every session."
+      }
+    }
   }
 }

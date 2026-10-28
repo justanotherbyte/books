@@ -1,5 +1,7 @@
 # Books
 
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/justanotherbyte/books)
+
 A private PDF library on Cloudflare Workers. PDFs and covers live in R2, metadata in D1. The reader fetches pages with HTTP range requests as you scroll, so a 40 MB book opens after a few hundred KB.
 
 ## Layout
@@ -22,6 +24,8 @@ npm run smoke -- some.pdf           # in a second terminal: auth, upload and ran
 ```
 
 ## Deploy
+
+The button above creates the R2 bucket and D1 database, asks for `APP_PASSWORD`, and runs the migrations on each deploy. To deploy by hand:
 
 ```sh
 npx wrangler login
