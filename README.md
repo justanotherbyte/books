@@ -4,6 +4,9 @@
 
 A private PDF library on Cloudflare Workers. PDFs and covers live in R2, metadata in D1. The reader fetches pages with HTTP range requests as you scroll, so a 40 MB book opens after a few hundred KB.
 
+>[!note]
+> This is mainly for my own personal use. You are welcome to deploy this yourself. This project is also a personal experiment of mine to see how newer agents can write code given zero guidance, so don't expect the code to be excellent.
+
 ## Layout
 
 - `src/pages/` holds the Astro routes. Each page renders one React component from `src/components/` as a client-only island.
