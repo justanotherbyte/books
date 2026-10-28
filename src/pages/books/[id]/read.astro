@@ -1,0 +1,10 @@
+---
+import { Reader } from '../../../components/reader/Reader';
+import Layout from '../../../layouts/Layout.astro';
+
+const id = Astro.params.id!;
+---
+
+<Layout>
+	<Reader client:only="react" id={id} />
+</Layout>

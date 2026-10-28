@@ -1,0 +1,11 @@
+---
+import { Details } from '../../../components/Details';
+import Layout from '../../../layouts/Layout.astro';
+
+const id = Astro.params.id!;
+const isNew = Astro.url.searchParams.has('new');
+---
+
+<Layout>
+	<Details client:only="react" id={id} isNew={isNew} />
+</Layout>

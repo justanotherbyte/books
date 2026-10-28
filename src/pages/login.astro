@@ -1,0 +1,13 @@
+---
+import { Login } from '../components/Login';
+import Layout from '../layouts/Layout.astro';
+
+// Only same-site paths, so the login page can't be used to redirect elsewhere.
+const next = Astro.url.searchParams.get('next') ?? '/';
+const isLocalPath = next.startsWith('/') && !next.startsWith('//') && !next.startsWith('/\\');
+const safeNext = isLocalPath ? next : '/';
+---
+
+<Layout>
+	<Login client:only="react" next={safeNext} />
+</Layout>

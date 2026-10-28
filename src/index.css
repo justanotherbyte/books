@@ -1,0 +1,79 @@
+@import 'tailwindcss';
+
+:root {
+	--ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+	--font-jetbrains: 'JetBrains Mono Variable';
+}
+
+body {
+	font-family: var(--font-jetbrains), monospace;
+	font-variant-numeric: tabular-nums;
+}
+
+@layer base {
+	::selection {
+		background-color: var(--color-blue-500);
+		color: white;
+	}
+
+	:focus-visible {
+		outline: 2px solid var(--color-blue-500);
+		outline-offset: 2px;
+	}
+
+	input {
+		caret-color: var(--color-blue-500);
+	}
+}
+
+.drop-overlay {
+	transition: opacity 200ms var(--ease-out);
+	@starting-style {
+		opacity: 0;
+	}
+}
+
+/* Subset of pdf.js's pdf_viewer.css: transparent, selectable text positioned over the page bitmap. */
+.textLayer {
+	position: absolute;
+	inset: 0;
+	overflow: clip;
+	line-height: 1;
+	text-align: initial;
+	transform-origin: 0 0;
+	text-size-adjust: none;
+	forced-color-adjust: none;
+	--scale-round-x: 1px;
+	--scale-round-y: 1px;
+	--min-font-size: 1;
+	--text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
+	--min-font-size-inv: calc(1 / var(--min-font-size));
+
+	:is(span, br) {
+		color: transparent;
+		position: absolute;
+		white-space: pre;
+		cursor: text;
+		transform-origin: 0% 0%;
+		user-select: text;
+	}
+	> :not(.markedContent),
+	.markedContent span:not(.markedContent) {
+		z-index: 1;
+		--font-height: 0;
+		font-size: calc(var(--text-scale-factor) * var(--font-height));
+		--scale-x: 1;
+		--rotate: 0deg;
+		transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv));
+	}
+	.markedContent {
+		display: contents;
+	}
+	::selection {
+		background: color-mix(in srgb, var(--color-blue-500) 35%, transparent);
+		color: transparent;
+	}
+	br::selection {
+		background: transparent;
+	}
+}

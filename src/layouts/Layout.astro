@@ -1,0 +1,19 @@
+---
+import '@fontsource-variable/jetbrains-mono/wght.css';
+import '../index.css';
+
+const { title = 'Library' } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta name="color-scheme" content="light dark" />
+		<title>{title}</title>
+	</head>
+	<body class="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white antialiased">
+		<slot />
+	</body>
+</html>

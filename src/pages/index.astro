@@ -1,0 +1,10 @@
+---
+import { Library } from '../components/Library';
+import Layout from '../layouts/Layout.astro';
+
+const tag = Astro.url.searchParams.get('tag');
+---
+
+<Layout>
+	<Library client:only="react" initialTag={tag} />
+</Layout>
