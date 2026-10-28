@@ -7,8 +7,7 @@
     {
       "binding": "DB",
       "database_name": "books",
-      // Replace with the id printed by `wrangler d1 create books` before deploying.
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "5b87d2a6-210c-480e-8fad-941b473610c3",
       "migrations_dir": "migrations"
     }
   ]
