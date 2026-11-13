@@ -148,6 +148,15 @@ export function Reader({ id }: { id: string }) {
 		});
 	}
 
+	// Lands the link's destination a little below the top edge, like a browser following an anchor.
+	const followLink = useCallback(
+		(page: number, top: number) => {
+			const el = scroller?.querySelector<HTMLElement>(`[data-page="${page}"]`);
+			if (el) scroller!.scrollTo({ top: el.offsetTop + top * el.offsetHeight - PAD });
+		},
+		[scroller],
+	);
+
 	function goToPage(n: number) {
 		const el = scroller?.querySelector<HTMLElement>(`[data-page="${n}"]`);
 		if (el) scroller!.scrollTo({ top: el.offsetTop - PAD });
@@ -352,6 +361,7 @@ export function Reader({ id }: { id: string }) {
 									drawing={!!ink}
 									onPin={pin}
 									onOpen={openNote}
+									onLink={followLink}
 								/>
 							))}
 						</div>
