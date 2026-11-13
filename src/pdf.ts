@@ -14,7 +14,7 @@ export function openLocal(data: ArrayBuffer) {
 	return pdfjs.getDocument({ data }).promise;
 }
 
-async function renderPage(doc: PDFDocument, pageNumber: number, canvas: HTMLCanvasElement, width: number) {
+export async function renderPage(doc: PDFDocument, pageNumber: number, canvas: HTMLCanvasElement, width: number) {
 	const page = await doc.getPage(pageNumber);
 	const scale = width / page.getViewport({ scale: 1 }).width;
 	const viewport = page.getViewport({ scale });
@@ -47,6 +47,43 @@ export async function renderReaderPage(doc: PDFDocument, pageNumber: number, can
 	await text.render();
 
 	return base.height / base.width;
+}
+
+// A link's box as page fractions [x, y, w, h], and where it points: a page (1-based) plus the y fraction to land on, or a URL.
+export type PageLink = { rect: [number, number, number, number]; page?: number; top?: number; url?: string };
+
+// shortcut: ignores page rotation and the destination's x; handle /Rotate if a rotated book misplaces links.
+export async function getPageLinks(doc: PDFDocument, pageNumber: number): Promise<PageLink[]> {
+	const page = await doc.getPage(pageNumber);
+	const [vx0, , vx1, vy1] = page.view;
+	const w = vx1 - vx0;
+	const h = vy1 - page.view[1];
+	const annotations = await page.getAnnotations({ intent: 'display' });
+
+	const links = await Promise.all(
+		annotations
+			.filter((a) => a.subtype === 'Link')
+			.map(async (a): Promise<PageLink | null> => {
+				const [x0, y0, x1, y1] = a.rect as number[];
+				const rect: PageLink['rect'] = [(x0 - vx0) / w, (vy1 - y1) / h, (x1 - x0) / w, (y1 - y0) / h];
+				if (a.url) return { rect, url: a.url };
+
+				const dest = typeof a.dest === 'string' ? await doc.getDestination(a.dest) : a.dest;
+				if (!Array.isArray(dest)) return null;
+				const index = typeof dest[0] === 'number' ? dest[0] : await doc.getPageIndex(dest[0]);
+
+				// XYZ stores top at [3], FitH/FitBH at [2], FitR at [5]; Fit/FitV have none.
+				const kind = dest[1]?.name;
+				const rawTop = kind === 'XYZ' ? dest[3] : kind === 'FitH' || kind === 'FitBH' ? dest[2] : kind === 'FitR' ? dest[5] : null;
+				let top = 0;
+				if (typeof rawTop === 'number') {
+					const target = await doc.getPage(index + 1);
+					top = Math.min(1, Math.max(0, (target.view[3] - rawTop) / (target.view[3] - target.view[1])));
+				}
+				return { rect, page: index + 1, top };
+			}),
+	);
+	return links.filter((l) => l !== null);
 }
 
 export async function renderCover(doc: PDFDocument, pageNumber = 1): Promise<Blob> {

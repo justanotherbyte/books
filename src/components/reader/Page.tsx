@@ -1,6 +1,6 @@
 import { memo, useEffect, useRef, useState } from 'react';
 import type { Note, Stroke } from '../../api';
-import { type PDFDocument, renderReaderPage } from '../../pdf';
+import { getPageLinks, type PageLink, type PDFDocument, renderPage, renderReaderPage } from '../../pdf';
 import { NoteIcon } from '../../ui';
 import { Ink } from './Ink';
 import type { Draft, Rect } from './shared';
@@ -20,10 +20,26 @@ type PageProps = {
 	drawing: boolean;
 	onPin: (page: number, x: number, y: number) => void;
 	onOpen: (note: Note) => void;
+	onLink: (page: number, top: number) => void;
 };
 
 // Renders only while within ~2 screens of the viewport; pdf.js then requests just that page's byte ranges from R2.
-export const Page = memo(function Page({ doc, number, ratio, width, watch, notes, strokes, draft, activeId, pinMode, drawing, onPin, onOpen }: PageProps) {
+export const Page = memo(function Page({
+	doc,
+	number,
+	ratio,
+	width,
+	watch,
+	notes,
+	strokes,
+	draft,
+	activeId,
+	pinMode,
+	drawing,
+	onPin,
+	onOpen,
+	onLink,
+}: PageProps) {
 	const ref = useRef<HTMLDivElement>(null);
 	const canvasHost = useRef<HTMLDivElement>(null);
 	const textHost = useRef<HTMLDivElement>(null);
@@ -31,6 +47,9 @@ export const Page = memo(function Page({ doc, number, ratio, width, watch, notes
 	const [aspect, setAspect] = useState(ratio);
 	const [hoverId, setHoverId] = useState<string | null>(null);
 	const hovered = pinMode || drawing ? undefined : notes.find((n) => n.id === hoverId);
+	const [links, setLinks] = useState<PageLink[]>([]);
+	const [preview, setPreview] = useState<PageLink | null>(null);
+	const previewTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
 	useEffect(() => watch(ref.current!, setNear), [watch]);
 
@@ -66,6 +85,26 @@ export const Page = memo(function Page({ doc, number, ratio, width, watch, notes
 		};
 	}, [near, doc, number, width]);
 
+	useEffect(() => {
+		if (!near) return;
+		let cancelled = false;
+		getPageLinks(doc, number)
+			.then((l) => !cancelled && setLinks(l))
+			.catch(() => {});
+		return () => {
+			cancelled = true;
+		};
+	}, [near, doc, number]);
+
+	useEffect(() => () => clearTimeout(previewTimer.current), []);
+
+	function hoverLink(link: PageLink | null) {
+		clearTimeout(previewTimer.current);
+		if (!link) return setPreview(null);
+		// Short delay so sweeping the mouse across a TOC doesn't render every target page.
+		previewTimer.current = setTimeout(() => setPreview(link), 250);
+	}
+
 	return (
 		<div
 			ref={ref}
@@ -95,6 +134,30 @@ export const Page = memo(function Page({ doc, number, ratio, width, watch, notes
 			<div ref={canvasHost} className="absolute inset-0" />
 			<Ink strokes={strokes} aspect={aspect} />
 			<div ref={textHost} className={pinMode || drawing ? 'pointer-events-none' : ''} />
+			{!pinMode &&
+				!drawing &&
+				links.map((link, i) => {
+					const [x, y, w, h] = link.rect;
+					const style = { left: `${x * 100}%`, top: `${y * 100}%`, width: `${w * 100}%`, height: `${h * 100}%` };
+					const className = 'absolute z-[5] hover:bg-blue-500/10';
+					return link.url ? (
+						<a key={i} href={link.url} target="_blank" rel="noopener noreferrer" title={link.url} className={className} style={style} />
+					) : (
+						<button
+							key={i}
+							type="button"
+							aria-label={`Go to page ${link.page}`}
+							className={`${className} cursor-pointer`}
+							style={style}
+							onClick={() => {
+								hoverLink(null);
+								onLink(link.page!, link.top!);
+							}}
+							onPointerEnter={(e) => e.pointerType === 'mouse' && hoverLink(link)}
+							onPointerLeave={() => hoverLink(null)}
+						/>
+					);
+				})}
 			{notes.map((note) => (
 				<Marks
 					key={note.id}
@@ -108,9 +171,54 @@ export const Page = memo(function Page({ doc, number, ratio, width, watch, notes
 			))}
 			{draft && <Marks rects={draft.rects} state="draft" />}
 			{hovered && <NoteTip note={hovered} />}
+			{preview && <LinkPreview doc={doc} link={preview} />}
 		</div>
 	);
 });
+
+const PREVIEW_WIDTH = 384;
+const PREVIEW_HEIGHT = 224;
+
+// A window onto the link's target page, scrolled to the destination, like pdf.js/Skim link previews.
+function LinkPreview({ doc, link }: { doc: PDFDocument; link: PageLink }) {
+	const host = useRef<HTMLDivElement>(null);
+	const [x, y, , h] = link.rect;
+	const below = y + h < 0.6;
+
+	useEffect(() => {
+		let cancelled = false;
+		const canvas = document.createElement('canvas');
+		canvas.className = 'block w-full';
+		renderPage(doc, link.page!, canvas, PREVIEW_WIDTH * devicePixelRatio)
+			.then(() => {
+				if (cancelled) return;
+				const cssHeight = (PREVIEW_WIDTH * canvas.height) / canvas.width;
+				// Start a little above the destination so its heading isn't flush with the edge.
+				const offset = Math.min(Math.max(0, link.top! * cssHeight - 16), Math.max(0, cssHeight - PREVIEW_HEIGHT));
+				canvas.style.transform = `translateY(${-offset}px)`;
+				host.current!.replaceChildren(canvas);
+			})
+			.catch(() => {});
+		return () => {
+			cancelled = true;
+		};
+	}, [doc, link]);
+
+	return (
+		<div
+			role="tooltip"
+			className={`absolute z-20 overflow-hidden pointer-events-none bg-white border border-zinc-400 shadow-lg ${below ? 'mt-1' : '-mt-1 -translate-y-full'}`}
+			style={{
+				width: `min(${PREVIEW_WIDTH}px, 100%)`,
+				height: PREVIEW_HEIGHT,
+				left: `clamp(0px, ${x * 100}%, 100% - min(${PREVIEW_WIDTH}px, 100%))`,
+				top: `${(below ? y + h : y) * 100}%`,
+			}}
+		>
+			<div ref={host} className="w-full h-full bg-zinc-100" />
+		</div>
+	);
+}
 
 // The note's text, shown under its highlight (or above it near the page bottom) while the mouse is over it.
 function NoteTip({ note }: { note: Note }) {
