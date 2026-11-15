@@ -16,6 +16,7 @@ import {
 	SpreadIcon,
 	UndoIcon,
 } from '../../ui';
+import { BookmarksMenu } from './BookmarksMenu';
 import { type Editing, NotesPanel } from './NotesPanel';
 import { Page } from './Page';
 import { byPosition, clamp01 } from './shared';
@@ -261,6 +262,7 @@ export function Reader({ id }: { id: string }) {
 						<PinIcon />
 						<span className="hidden md:inline">Pin</span>
 					</button>
+					<BookmarksMenu bookId={id} current={current} onJump={goToPage} button={`${tool} ${toolIdle}`} />
 					<button type="button" onClick={() => setPanel((p) => !p)} aria-pressed={panel} aria-label="Notes" className={`${tool} ${panel ? toolOn : toolIdle}`}>
 						<NoteIcon />
 						<span className="hidden md:inline">Notes</span>

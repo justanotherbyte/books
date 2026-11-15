@@ -1,6 +1,6 @@
-import type { Book, Note, Stroke, Tag } from './lib/types';
+import type { Book, Bookmark, Note, Stroke, Tag } from './lib/types';
 
-export type { Book, Note, Stroke };
+export type { Book, Bookmark, Note, Stroke };
 type NewNote = Pick<Note, 'page' | 'quote' | 'rects' | 'body'>;
 type NewStroke = Omit<Stroke, 'book_id' | 'created_at'>;
 
@@ -45,6 +45,10 @@ export const api = {
 	strokes: (id: string) => call<Stroke[]>(`/books/${id}/strokes`),
 	addStroke: (id: string, json: NewStroke) => call<Stroke>(`/books/${id}/strokes`, sendJson('POST', json)),
 	removeStroke: (id: string, strokeId: string) => call<void>(`/books/${id}/strokes/${strokeId}`, { method: 'DELETE' }),
+	bookmarks: (id: string) => call<Bookmark[]>(`/books/${id}/bookmarks`),
+	addBookmark: (id: string, page: number, name: string) => call<Bookmark>(`/books/${id}/bookmarks`, sendJson('POST', { page, name })),
+	renameBookmark: (id: string, bookmarkId: string, name: string) => call<Bookmark>(`/books/${id}/bookmarks/${bookmarkId}`, sendJson('PATCH', { name })),
+	removeBookmark: (id: string, bookmarkId: string) => call<void>(`/books/${id}/bookmarks/${bookmarkId}`, { method: 'DELETE' }),
 };
 
 export const fileUrl = (id: string) => `/api/books/${id}/file`;

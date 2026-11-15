@@ -38,6 +38,7 @@ export const DELETE: APIRoute = async ({ params }) => {
 		env.DB.prepare('DELETE FROM book_tags WHERE book_id = ?').bind(book.id),
 		env.DB.prepare('DELETE FROM notes WHERE book_id = ?').bind(book.id),
 		env.DB.prepare('DELETE FROM strokes WHERE book_id = ?').bind(book.id),
+		env.DB.prepare('DELETE FROM bookmarks WHERE book_id = ?').bind(book.id),
 		env.DB.prepare('DELETE FROM books WHERE id = ?').bind(book.id),
 	]);
 

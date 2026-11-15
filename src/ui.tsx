@@ -136,3 +136,9 @@ export const NoteIcon = ({ size = 16 }: { size?: number }) => (
 		<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
 	</svg>
 );
+
+export const BookmarkIcon = ({ filled = false }: { filled?: boolean }) => (
+	<svg {...icon} fill={filled ? 'currentColor' : 'none'}>
+		<path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
+	</svg>
+);
