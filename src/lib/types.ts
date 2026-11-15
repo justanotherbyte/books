@@ -34,3 +34,5 @@ export type Stroke = {
 };
 
 export type Tag = { name: string; count: number };
+
+export type Bookmark = { id: string; book_id: string; page: number; name: string; created_at: number };

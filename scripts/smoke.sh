@@ -39,6 +39,12 @@ SID=0b6f4f7e-2c1a-4d5e-9f3a-6b7c8d9e0f12
 curl -s -b "$JAR" "$BASE/api/books/$ID/strokes" | grep -q '"points":\[0.1,0.2,0.3,0.4\]' || fail "stroke points not stored"
 [ "$(code -X DELETE "$BASE/api/books/$ID/strokes/$SID")" = 204 ] || fail "stroke delete"
 [ "$(code -X DELETE "$BASE/api/books/$ID/strokes/$SID")" = 404 ] || fail "stroke delete twice"
+[ "$(code -X POST -H "$J" -d '{"page":1,"name":"   "}' "$BASE/api/books/$ID/bookmarks")" = 400 ] || fail "blank bookmark name accepted"
+BM=$(curl -s -b "$JAR" -X POST -H "$J" -d '{"page":1,"name":" Start "}' "$BASE/api/books/$ID/bookmarks" | sed 's/.*"id":"\([^"]*\)".*/\1/')
+curl -s -b "$JAR" -X PATCH -H "$J" -d '{"name":"Intro"}' "$BASE/api/books/$ID/bookmarks/$BM" | grep -q '"name":"Intro"' || fail "bookmark rename"
+curl -s -b "$JAR" "$BASE/api/books/$ID/bookmarks" | grep -q '"page":1,"name":"Intro"' || fail "bookmark not stored"
+[ "$(code -X DELETE "$BASE/api/books/$ID/bookmarks/$BM")" = 204 ] || fail "bookmark delete"
+[ "$(code -X DELETE "$BASE/api/books/$ID/bookmarks/$BM")" = 404 ] || fail "bookmark delete twice"
 [ "$(code -X DELETE "$BASE/api/books/$ID")" = 204 ] || fail "delete"
 [ "$(code "$BASE/api/books/$ID/notes")" = 404 ] || fail "notes reachable after book delete"
 curl -s -b "$JAR" "$BASE/api/tags" | grep -q 'Smoke tag' && fail "tags left behind after delete"
