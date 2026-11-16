@@ -19,6 +19,7 @@ import {
 import { BookmarksMenu } from './BookmarksMenu';
 import { type Editing, NotesPanel } from './NotesPanel';
 import { Page } from './Page';
+import { PrintMenu } from './PrintMenu';
 import { byPosition, clamp01 } from './shared';
 import { INK, type InkTool, useInkInput } from './useInkInput';
 import { usePageObservers } from './usePageObservers';
@@ -263,6 +264,7 @@ export function Reader({ id }: { id: string }) {
 						<span className="hidden md:inline">Pin</span>
 					</button>
 					<BookmarksMenu bookId={id} current={current} onJump={goToPage} button={`${tool} ${toolIdle}`} />
+					{doc && <PrintMenu doc={doc} current={current} button={`${tool} ${toolIdle}`} />}
 					<button type="button" onClick={() => setPanel((p) => !p)} aria-pressed={panel} aria-label="Notes" className={`${tool} ${panel ? toolOn : toolIdle}`}>
 						<NoteIcon />
 						<span className="hidden md:inline">Notes</span>

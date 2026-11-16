@@ -114,3 +114,44 @@ export async function extractDetails(doc: PDFDocument, fileName: string) {
 
 	return { title: junk ? fromName : metaTitle, author: info.Author?.trim() ?? '', pages: doc.numPages };
 }
+
+// Renders pages `from`..`to` as images into a hidden iframe and opens the browser's print dialog for just those pages.
+// shortcut: prints the PDF bitmap only, without notes or ink; draw those onto each canvas if printed annotations matter.
+export async function printPages(doc: PDFDocument, from: number, to: number) {
+	const urls: string[] = [];
+	for (let n = from; n <= to; n++) {
+		const canvas = document.createElement('canvas');
+		// About 200 dpi on a Letter or A4 sheet.
+		await renderPage(doc, n, canvas, 1700);
+		const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
+		if (!blob) throw new Error(`Could not render page ${n}`);
+		urls.push(URL.createObjectURL(blob));
+	}
+
+	const frame = document.createElement('iframe');
+	frame.style.cssText = 'position:fixed;width:0;height:0;border:0;visibility:hidden';
+	document.body.appendChild(frame);
+	const cleanup = () => {
+		frame.remove();
+		urls.forEach((u) => URL.revokeObjectURL(u));
+	};
+
+	try {
+		const fdoc = frame.contentDocument!;
+		fdoc.head.innerHTML = '<style>@page{margin:0}body{margin:0}img{display:block;width:100%;height:100vh;object-fit:contain;break-after:page}img:last-child{break-after:auto}</style>';
+		for (const url of urls) {
+			const img = fdoc.createElement('img');
+			img.src = url;
+			fdoc.body.appendChild(img);
+		}
+		await Promise.all([...fdoc.images].map((img) => img.decode()));
+
+		const win = frame.contentWindow!;
+		win.addEventListener('afterprint', () => setTimeout(cleanup, 0), { once: true });
+		win.focus();
+		win.print();
+	} catch (err) {
+		cleanup();
+		throw err;
+	}
+}
